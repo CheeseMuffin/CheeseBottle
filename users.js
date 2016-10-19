@@ -25,6 +25,7 @@ class User {
 	}
 
 	isDeveloper() {
+		console.log(this.id);
 		return Config.developers && Config.developers.indexOf(this.id) !== -1;
 	}
 

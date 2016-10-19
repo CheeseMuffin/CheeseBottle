@@ -16,20 +16,20 @@ for (let i in Tools.data.moves) {
 for (let i in Tools.data.items) {
 	let item = Tools.data.items[i];
 	if (!item.name || !item.desc) continue;
-	data["Pokemon Moves"].push(item.name);
+	data["Pokemon Items"].push(item.name);
 }
 
 for (let i in Tools.data.abilities) {
 	let ability = Tools.data.abilities[i];
 	if (!ability.name || !ability.desc) continue;
-	data["Pokemon Moves"].push(ability.name);
+	data["Pokemon Abilities"].push(ability.name);
 }
 
 class Order extends Games.Game {
 	constructor(room) {
 		super(room);
 		this.name=name;
-		this.id = Toold.toId(name);
+		this.id = Tools.toId(name);
 		this.answer = null;
 		this.points = new Map();
 		this.maxPoints = 5;
@@ -44,36 +44,49 @@ class Order extends Games.Game {
 	
 	nextLetter() {
 		if (this.locations.length === (this.answer.length - 1)) {
-			this.say("All letters have been revealed! The answer was " + answer);
+			this.room.say("All letters have been revealed! The answer was " + this.answer);
 			this.answer = null;
-			this.setTimeout(() => this.askQuestion(), 5*1000)
+			this.timeout = setTimeout(() => this.askQuestion(), 5*1000)
 		}
+		else {
 		let other = [];
-		for (i = 0; i < this.answer.length; i++) {
+		for (var i = 0; i < this.answer.length; i++) {
 			if (this.locations.indexOf(i) == -1) {
 				other.push(i);
 			}
 		}
 		let value = Math.floor(Math.random() * other.length);
 		this.locations.push(other[value]);
-		this.locations.sort();
+		this.locations.sort(function(a, b){return a-b});
 		let str = "";
-		for (i = 0; i < locations.length; i++) {
-			str += answer[locations[i]];
+		for (var i = 0; i < this.locations.length; i++) {
+			str += this.answer[this.locations[i]];
 		}
-		this.say("**" + category + "**: " + toUpperCase(str));
-		this.setTimeOut(() => this.nextLetter(), 5*1000);
+		this.room.say("**" + this.category + "**: " + str.toUpperCase());
+		this.timeout = setTimeout(() => this.nextLetter(), 5*1000);
+		}
 	}
 	
 	askQuestion() {
 		this.category = this.categories[Math.floor(Math.random() * this.categories.length)];
-		this.answer = this.data[categories][Math.floor(Math.random()) * this.data[categories].length];
+		var x = Math.floor(Math.random() * data[this.category].length)
+		console.log(x);
+		console.log(data[this.category][x]);
+		this.answer = data[this.category][x];
+		console.log(this.category);
+		while (typeof this.answer === 'function') {
+			//console.log(this.answer);
+			this.answer = data[this.category][Math.floor(Math.random() * data[this.category].length)];
+		}
+		
 		this.locations = [];
 		this.nextLetter();
 	}
 	
 	guess(guess, user) {
-		if (!this.answer || guess != answer) return;
+		guess = Tools.toId(guess);
+		console.log(guess);
+		if (!this.answer || guess != Tools.toId(this.answer)) return;
 		clearTimeout(this.timeout);
 		if (!(user.id in this.players)) this.addPlayer(user);
 		let player = this.players[user.id];
@@ -81,12 +94,16 @@ class Order extends Games.Game {
 		points += 1;
 		this.points.set(player, points);
 		if (points >= this.maxPoints) {
-			this.say("Correct! " + user.name + " wins the game! (Answer__" + answer + "__)");
+			this.room.say("Correct! " + user.name + " wins the game! (Answer: __" + this.answer + "__)");
 			this.end();
 			return;
 		}
-		this.say("Correct! " + user.name + " advances to " + points + " point" + (points > 1 ? "s" : "") + ". (Answer__" + answer + "__)");
-		this.answers = null;
+		this.room.say("Correct! " + user.name + " advances to " + points + " point" + (points > 1 ? "s" : "") + ". (Answer: __" + this.answer + "__)");
+		this.answer = null;
 		this.timeout = setTimeout(() => this.askQuestion(), 5 * 1000);
 	}
 }
+
+exports.name = name;
+exports.description = "Letters";
+exports.game = Order;

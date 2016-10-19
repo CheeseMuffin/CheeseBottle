@@ -28,6 +28,7 @@ class Game {
 		this.players = {};
 		this.playerCount = 0;
 		this.started = false;
+		this.users = {};
 	}
 
 	say(message) {
@@ -116,6 +117,7 @@ class Plugin {
 		let id = Tools.toId(game);
 		if (!(id in this.games)) return room.say("The game '" + game.trim() + "' was not found.");
 		room.game = new this.games[id].game(room); // eslint-disable-line new-cap
+	
 		room.say("Hosting a game of " + this.games[id].name + "!" + (this.games[id].description ? " Description: " + this.games[id].description : ""));
 	}
 }
@@ -123,30 +125,35 @@ class Plugin {
 let Games = new Plugin();
 
 let commands = {
-	gamesignups: 'creategame',
-	creategame: function (target, room, user) {
-		if (!user.hasRank(room, '+')) return;
+	gamesignups: 'signups',
+	signups: function (target, room, user) {
+		if (!user.isDeveloper() && !user.hasRank(room, '+')) return;
 		Games.createGame(target, room);
 	},
-	startgame: function (target, room, user) {
-		if (!user.hasRank(room, '+') || !room.game) return;
+	startgame: 'start',
+	start: function (target, room, user) {
+		if ((!user.isDeveloper() && !user.hasRank(room, '+')) || !room.game) return;
 		if (typeof room.game.start === 'function') room.game.start();
 	},
-	endgame: function (target, room, user) {
-		if (!user.hasRank(room, '+') || !room.game) return;
+	endgame: 'end',
+	end: function (target, room, user) {
+		if ((!user.isDeveloper() && !user.hasRank(room, '+')) || !room.game) return;
 		if (typeof room.game.end === 'function') room.game.end(true);
 	},
-	guess: function (target, room, user) {
+	guess: 'g',
+	g: function (target, room, user) {
 		if (!room.game) return;
 		if (typeof room.game.guess === 'function') room.game.guess(target, user);
 	},
-	joingame: function (target, room, user) {
+	joingame: 'join',
+	join: function (target, room, user) {
 		if (!room.game) return;
 		if (typeof room.game.join === 'function') room.game.join(user);
 	},
-	leavegame: function (target, room, user) {
+	leavegame: 'leave',
+	leave: function (target, room, user) {
 		if (!room.game) return;
-		if (typeof room.game.leave === 'function') room.leave.join(user);
+		if (typeof room.game.leave === 'function') room.game.leave(user);
 	},
 };
 
