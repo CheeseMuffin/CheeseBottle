@@ -28,7 +28,6 @@ class Game {
 		this.players = {};
 		this.playerCount = 0;
 		this.started = false;
-		this.users = {};
 	}
 
 	say(message) {
@@ -107,7 +106,9 @@ class Plugin {
 		for (let i = 0, len = games.length; i < len; i++) {
 			let file = games[i];
 			if (!file.endsWith('.js')) continue;
+
 			file = require('./../games/' + file);
+			console.log(file.name);
 			if (file.name && file.game) this.games[Tools.toId(file.name)] = file;
 		}
 	}
@@ -120,6 +121,21 @@ class Plugin {
 	
 		room.say("Hosting a game of " + this.games[id].name + "!" + (this.games[id].description ? " Description: " + this.games[id].description : ""));
 	}
+	
+	play(user, target) {
+		console.log("ay lmao");
+		console.log(user.name);
+		console.log(target);
+		for (let fileName in this.games) {
+			let game = this.games[fileName];
+			console.log(game.name);
+			if (typeof game.game.play === 'function') {
+				console.log("made it here");
+				game.game.play(user, target);
+				return;
+			}
+		}
+	}
 }
 
 let Games = new Plugin();
@@ -127,6 +143,7 @@ let Games = new Plugin();
 let commands = {
 	gamesignups: 'signups',
 	signups: function (target, room, user) {
+		console.log(room.id);
 		if (!user.isDeveloper() && !user.hasRank(room, '+')) return;
 		Games.createGame(target, room);
 	},
@@ -155,6 +172,28 @@ let commands = {
 		if (!room.game) return;
 		if (typeof room.game.leave === 'function') room.game.leave(user);
 	},
+	
+	play: function (target, room, user) {
+		if (room.name !== user.name) return;
+		console.log("hi scrubs");
+		console.log(room.name + " " + user.name + " " + target);
+		let spaceIndex = target.indexOf(',');
+		if (spaceIndex === -1) {
+			user.say("You didn't pick a room!");
+			return;
+		}
+		let realRoomName =  target.substr(spaceIndex+1);
+		if (realRoomName.charAt(0) === ' ') {
+			realRoomName = realRoomName.substr(1);
+		}
+		console.log(realRoomName);
+		let mon = target.substr(0,spaceIndex);
+		let realRoom = Rooms.get(realRoomName);
+		if (!realRoom || !realRoom.game) {
+			return;
+		}
+		realRoom.game.play(user, mon);
+	}
 };
 
 Games.Game = Game;

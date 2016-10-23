@@ -42,6 +42,7 @@ class HangmanBomb extends Games.Game {
 		this.category = null;
 		this.curGuesses = new Map();
 		this.round = 0;
+		this.users = {};
 	}
 	
 	onStart() {
@@ -50,9 +51,9 @@ class HangmanBomb extends Games.Game {
 	
 	onJoin(user) {
 		let player = this.players[user.id];
-		this.points.set(player, 3);
+		this.points.set(player, 5);
 		this.curGuesses.set(player, null);
-		this.users[player]=user;
+		this.users[user.id]=user;
 	}
 	
 	onLeave(user) {
@@ -71,26 +72,7 @@ class HangmanBomb extends Games.Game {
 				str = str.replaceAt(i, '/');
 			}
 		}
-		if (this.round != 0) {
-			for (let userID in this.players) {
-				let player = this.players[userID];
-				let guess = this.curGuesses.get(player);
-				let points = this.points.get(player);
-				let user = this.users[player];
-				console.log("user " + user.name + " has " + points + " points");
-				if (guess != "" && (!guess || guess.length > 1 || (guess.length == 1 && this.answer.split(guess).length === 1))) {
-					
-					this.points.set(player, points-1);
-					if (points === 1) {
-						let user = this.users[player];
-						user.say("You have lost all your lives!");
-						delete this.users[player];
-						delete this.players[userID];
-					}
-				}
-				this.curGuesses.set(player, null);
-			}
-			for (let letter in this.guessedLets) {
+		for (let letter in this.guessedLets) {
 				var found = false;
 				for (var i = 0; i < this.answer.length; i++) {
 					if (this.answer[i] === this.guessedLets[letter]) {
@@ -102,20 +84,63 @@ class HangmanBomb extends Games.Game {
 					badstr += ( this.guessedLets[letter]+ " ");
 				}
 			}
+		var bad = false;
+		if (this.round != 0) {
+			for (let userID in this.players) {
+				if (!userID) {
+					continue;
+				}
+				let player = this.players[userID];
+				let guess = this.curGuesses.get(player);
+				let points = this.points.get(player);
+
+				if (guess != "" && (!guess || guess.length > 1 || (guess.length == 1 && this.answer.split(guess).length === 1))) {
+					
+					this.points.set(player, points-1);
+					if (points === 1) {
+						this.playerCount--;
+						player.say("You have lost all your lives!");
+						delete this.players[userID];
+					}
+				}
+				console.log("user " + userID + " has " + points + " points");
+				this.curGuesses.set(player, null);
+			}
 		}
 		else {
 			this.round++;
 		}
-		this.room.say(str.split("").join(" ") + "| **" + this.category + "**| " + badstr);
-		this.answer = realAnswer;
-		this.timeout = setTimeout(() => this.nextLetter(), 10*1000);
+		if (this.playerCount === 0) {
+			this.room.say("The correct answer was: __" + realAnswer+ "__");
+			this.room.say("All players have died. Better luck next time!");
+			bad = true;
+			this.end();
+		}
+		if (this.playerCount === 1) {
+			bad = true;
+			var name = "";
+			for (let userID in this.players) {
+				name = Users.get(userID).name;
+				break;
+			}
+			this.room.say("The correct answer was: __" + realAnswer+ "__")
+			this.room.say(name + " has won the game!");
+			this.end();
+			return;
+		}
+		if (!bad) {
+			this.room.say(str.split("").join(" ") + "| **" + this.category + "**| " + badstr);
+			this.answer = realAnswer;
+			this.timeout = setTimeout(() => this.nextLetter(), 10*1000);
+		}
+		
 	}
 	askQuestion() {
 		this.round = 0;
 		var str = "";
 		var numUsers = 0;
 		for (let userID in this.players) {
-			str += userID;
+			str += Users.get(userID).name;
 			str += ": (";
 			let player = this.players[userID];
 			str += this.points.get(player);
@@ -124,8 +149,8 @@ class HangmanBomb extends Games.Game {
 		}
 		if (numUsers === 1) {
 			var name = "";
-			for (let user in this.users) {
-				name = this.users[user].name;
+			for (let userID in this.players) {
+				name = Users.get(userID).name;
 				break;
 			}
 			this.room.say(name + " has won the game!");
@@ -142,6 +167,7 @@ class HangmanBomb extends Games.Game {
 			this.guessedWords=[];
 			this.category = this.categories[Math.floor(Math.random() * this.categories.length)];
 			this.answer = data[this.category][Math.floor(Math.random() * data[this.category].length)];
+			//this.guessedLets.push(Tools.toId(this.answer[0]));
 			this.room.say(str);
 			console.log(this.answer);
 			this.nextLetter();
@@ -174,7 +200,7 @@ class HangmanBomb extends Games.Game {
 			let points = this.points.get(player);
 			points += 1;
 			this.points.set(player, points);
-			this.room.say("Correct! " + user.name + " advances to " + points + " point" + (points > 1 ? "s" : "") + ". (Answer: __" + this.answer + "__)");
+			this.room.say("Correct! " + user.name + " has gained one life!" + "(Answer: __" + this.answer + "__)");
 			this.answer = null;
 			this.timeout = setTimeout(() => this.askQuestion(), 5 * 1000);
 		}
@@ -182,5 +208,5 @@ class HangmanBomb extends Games.Game {
 }
 
 exports.name = name;
-exports.description = "Hangman Bomb! Each player starts with 3 lives - if you guess the word, you gain a point, but every wrong answer you lose a point. Last survivor Wins!";
+exports.description = "Hangman Bomb! A variation of hangman in which each player starts with 3 lives - if you guess the word, you gain a point, but every wrong answer you lose a point. Last survivor Wins!";
 exports.game = HangmanBomb;

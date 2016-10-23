@@ -39,6 +39,7 @@ class Context {
 		}
 
 		try {
+			console.log(this.user.name + " " + target);
 			Commands[command].call(this, target, this.room, this.user, this.command, this.time);
 		} catch (e) {
 			let stack = e.stack;
