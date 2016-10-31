@@ -19,6 +19,9 @@ class Tools {
 		this.data.moves = require('./data/moves.js').BattleMovedex;
 		this.data.items = require('./data/items.js').BattleItems;
 		this.data.abilities = require('./data/abilities.js').BattleAbilities;
+		this.data.learnsets = require('./data/learnsets.js').BattleLearnsets;
+		this.data.locations = require('./data/locations.js').BattleLocations;
+		this.data.characters = require('./data/characters.js').BattleCharacters;
 	}
 
 	toId(text) {

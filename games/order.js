@@ -1,11 +1,11 @@
-'use strict'
+'use strict';
 
 const name = "Orders";
 const data = {
 	"Pokemon Moves" : [],
 	"Pokemon Items" : [],
 	"Pokemon Abilities": [],
-}
+};
 
 for (let i in Tools.data.moves) {
 	let move = Tools.data.moves[i];
@@ -28,7 +28,7 @@ for (let i in Tools.data.abilities) {
 class Order extends Games.Game {
 	constructor(room) {
 		super(room);
-		this.name=name;
+		this.name = name;
 		this.id = Tools.toId(name);
 		this.answer = null;
 		this.points = new Map();
@@ -37,56 +37,46 @@ class Order extends Games.Game {
 		this.locations = [];
 		this.category = null;
 	}
-	
+
 	onStart() {
 		this.askQuestion();
 	}
-	
+
 	nextLetter() {
 		if (this.locations.length === (this.answer.length - 1)) {
 			this.room.say("All letters have been revealed! The answer was " + this.answer);
 			this.answer = null;
-			this.timeout = setTimeout(() => this.askQuestion(), 5*1000)
-		}
-		else {
-		let other = [];
-		for (var i = 0; i < this.answer.length; i++) {
-			if (this.locations.indexOf(i) == -1) {
-				other.push(i);
+			this.timeout = setTimeout(() => this.askQuestion(), 5 * 1000);
+		} else {
+			let other = [];
+			for (let i = 0; i < this.answer.length; i++) {
+				if (this.locations.indexOf(i) === -1) {
+					other.push(i);
+				}
 			}
-		}
-		let value = Math.floor(Math.random() * other.length);
-		this.locations.push(other[value]);
-		this.locations.sort(function(a, b){return a-b});
-		let str = "";
-		for (var i = 0; i < this.locations.length; i++) {
-			str += this.answer[this.locations[i]];
-		}
-		this.room.say("**" + this.category + "**: " + str.toUpperCase());
-		this.timeout = setTimeout(() => this.nextLetter(), 5*1000);
+			let value = Math.floor(Math.random() * other.length);
+			this.locations.push(other[value]);
+			this.locations.sort(function (a, b) {return a - b;});
+			let str = "";
+			for (let i = 0; i < this.locations.length; i++) {
+				str += this.answer[this.locations[i]];
+			}
+			this.room.say("**" + this.category + "**: " + str.toUpperCase());
+			this.timeout = setTimeout(() => this.nextLetter(), 5 * 1000);
 		}
 	}
-	
+
 	askQuestion() {
 		this.category = this.categories[Math.floor(Math.random() * this.categories.length)];
-		var x = Math.floor(Math.random() * data[this.category].length)
-		console.log(x);
-		console.log(data[this.category][x]);
+		let x = Math.floor(Math.random() * data[this.category].length);
 		this.answer = data[this.category][x];
-		console.log(this.category);
-		while (typeof this.answer === 'function') {
-			//console.log(this.answer);
-			this.answer = data[this.category][Math.floor(Math.random() * data[this.category].length)];
-		}
-		
 		this.locations = [];
 		this.nextLetter();
 	}
-	
+
 	guess(guess, user) {
 		guess = Tools.toId(guess);
-		console.log(guess);
-		if (!this.answer || guess != Tools.toId(this.answer)) return;
+		if (!this.answer || guess !== Tools.toId(this.answer)) return;
 		clearTimeout(this.timeout);
 		if (!(user.id in this.players)) this.addPlayer(user);
 		let player = this.players[user.id];
